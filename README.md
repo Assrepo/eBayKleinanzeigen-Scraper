@@ -46,7 +46,7 @@ $ nohup python -u main.py > custom_output_file.log &
 > If the script does not work anymore or you have any questions, please contact me:
 - E-Mail: varsius@gmail.com
 ---
-##Screenshots
+## Screenshots
 ![Posteingang](https://imgur.com/mU4MS5o)
 ![E-Mail1](https://imgur.com/nDbRwbq)
 ![E-Mail2](https://imgur.com/NR06ujN)
