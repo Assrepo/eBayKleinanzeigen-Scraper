@@ -1,0 +1,39 @@
+<html>
+
+<style type="text/css" media="screen">
+    .itemlist-separatedbefore>li:first-child,
+    .itemlist-padded-separatedbefore>li:first-child {
+        border-top: 1px solid #E9E9E9
+    }
+    
+    li {
+        display: list-item;
+        text-align: -webkit-match-parent;
+    }
+    
+    .aditem,
+    .savedsearchitem,
+    .followuseritem {
+        display: -moz-box;
+        display: -ms-flexbox;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-justify-content: space-between;
+        -moz-justify-content: space-between;
+        -ms-flex-pack: justify;
+        justify-content: space-between;
+        padding: 12px;
+        position: relative
+    }
+    
+    body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 13px;
+    }
+</style>
+
+<ul style="list-style: none;">
+    $items
+</ul>
+
+</html>

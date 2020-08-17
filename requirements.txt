@@ -1,0 +1,6 @@
+requests
+apscheduler
+progress
+bs4
+urllib3
+certifi

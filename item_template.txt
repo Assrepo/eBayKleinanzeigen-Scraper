@@ -1,0 +1,18 @@
+<li class="ad-listitem">
+    <article class="aditem">
+        <img src="$src">
+        <div class="aditem-main">
+            <h2 class="text-module-begin">
+                    <a href="$link">$title</a>
+                </h2>
+            <p>$description</p>
+        </div>
+        <div class="aditem-details">
+            <strong> $price </strong>
+            <br> $plz
+            <br> $ort
+            <br> $time
+            <br>
+        </div>
+    </article>
+</li>
