@@ -40,6 +40,21 @@ $ nohup python -u main.py &
 ```shell
 $ nohup python -u main.py > custom_output_file.log &
 ```
+
+### Termination
+> In order to terminate the script, first get the pid of the running process with
+```shell
+$ ps ax | grep main.py
+```
+> You should see something like this:
+```shell
+$ ps ax | grep main.py
+1819 ?        Sl     0:11 python -u main.py
+```
+> Now you can just kill the process (replace "pid" with the first number from your output above)
+```shell
+$ kill pid
+```
 ---
 ## Problems and Questions
 > There did not appear any problems in the testing phase.
