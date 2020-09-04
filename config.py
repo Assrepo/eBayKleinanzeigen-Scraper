@@ -8,6 +8,8 @@
 # Your Gmail credentials (The scraper uses to send the E-Mail)
 # You need to 'Allow less secure apps to access your account' in order to automatically send emails, see below:
 # https://support.google.com/accounts/answer/6010255
+# If you set up 2-Step Verification for your account, take a look at:
+# https://support.google.com/mail/answer/185833?hl=en
 # If you are getting an SMTPAuthenticationError with an error code of 534 try this step:
 # https://accounts.google.com/DisplayUnlockCaptcha
 EMAIL_ADDRESS = 'your_scraper@gmail.com'
