@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from progress.bar import Bar
 from category import category_dict
 from config import DEBUG
+import json
 
 
 class EbayScraper(object):
@@ -26,11 +27,19 @@ class EbayScraper(object):
         self.vb = job.get('Include_VB')
         self.search_for = job.get('Search_for', "")
         self.filters = job.get('Filters')
-        self.path = "viewed_offers.txt"
+        self.path = "viewed_offers.json"
 
-        self.file = open(self.path, "r+", encoding='utf8')
-        self.viewed_offers = self.file.read().splitlines()
+        with open(self.path, "r", encoding='utf8') as file:
+            self.viewed_offers = json.load(file)
         self.content = list()
+
+    def get_job_hash(self):
+        """
+        Converts the job arguments into a unique string that is used for storing the last viewed offer for this job
+        :return: str
+        """
+
+        return f"{self.category or 'None'}-{self.mode}-{self.price}-{self.vb}-{self.search_for}-{self.filters}"
 
     def get_location_id(self, location):
         """
@@ -94,7 +103,12 @@ class EbayScraper(object):
             url = self.build_url_everything(page)
         else:
             url = self.build_url_specific(page)
-        return requests.get(url, headers=self.agent).content
+        response = requests.get(url, headers=self.agent)
+
+        if response.history:
+            return ""
+
+        return response.content
 
     def extract_page_content(self, data_raw):
         """
@@ -110,23 +124,32 @@ class EbayScraper(object):
             if DEBUG:
                 print('***DEBUG*** Adtable not found ~ Maybe there are no more sites to look at?')
             return False
-        items = adtable.findChildren("li", recursive=False)
+        # Adds do not have class lazyload-item
+        items = adtable.findChildren("li", recursive=False, attrs={'class': 'ad-listitem lazyload-item'})
         bar = Bar('Processing', max=len(items))
         for item in items:
             bar.next()
             article = item.find("article")
             if article:
-                addon = article.find('div', attrs={'class': 'aditem-addon'})
-                if addon.find('a'):
+                time_div = article.find('div', attrs={'class': 'aditem-main--top--right'})
+                # Should be depreciated now, removing if other add filtering works
+                """if addon.find('a'):
                     if DEBUG:
                         print('***DEBUG*** Ignored because of the existence of a link ~ Probably an ad')
-                    continue
-                time = addon.text
+                    continue"""
+                time = time_div.text.strip('\n ')  # String look like '\n 13.08.2021'
                 main = article.find('div', attrs={'class': 'aditem-main'})
                 anchor = main.find('h2').find('a')
                 link = "https://www.ebay-kleinanzeigen.de" + anchor['href']
                 item_id = link.split('/')[-1].split('-')[0]
-                if item_id in self.viewed_offers:
+                if self.viewed_offers.get(self.get_job_hash()):
+                    if self.viewed_offers.get(self.get_job_hash()) >= item_id:
+                        if DEBUG:
+                            print('***DEBUG*** Already seen offer {} ... exiting ...'.format(item_id))
+                        bar.finish()
+                        return False
+
+                """if item_id in self.viewed_offers:
                     self.file.close()
                     if DEBUG:
                         print('***DEBUG*** Already seen offer {} ... exiting ...'.format(item_id))
@@ -134,24 +157,24 @@ class EbayScraper(object):
                     return False
                 else:
                     self.file.write(item_id + '\n')
-                    self.viewed_offers.append(item_id)
+                    self.viewed_offers.append(item_id)"""
                 title = anchor.text
-                description = main.find('p', attrs={'class': None}).text
+                description = main.find('p', attrs={'class': 'aditem-main--middle--description'}).text
                 for filtered_word in self.filters:
                     if filtered_word.upper() in title.upper() or filtered_word.upper() in description.upper():
                         if DEBUG:
                             print('***DEBUG*** Filtered offer with title: ' + title)
                         break
                 else:
-                    details = article.find('div', attrs={'class': 'aditem-details'})
-                    plz = details.find('br').next_sibling.strip()
-                    ort = details.findAll('br')[1].next_sibling.strip()
+                    details = article.find('div', attrs={'class': 'aditem-main--top--left'})
+                    plz = details.text.split()[0]
+                    ort = " ".join(details.text.split()[1:])
                     image = article.find('div', attrs={'class': 'aditem-image'}).find('div')
                     if image.has_attr('data-imgsrc'):
                         source = image['data-imgsrc'] or ""
                     else:
                         source = ""
-                    price = details.find('strong').text.strip()
+                    price = article.find('p', attrs={'class': 'aditem-main--middle--price'}).text.lstrip()
                     if price == "VB":
                         if self.price == 0:
                             if DEBUG:
@@ -162,8 +185,8 @@ class EbayScraper(object):
                             if DEBUG:
                                 print('***DEBUG*** Price is VB ~ Offer will be skipped')
                             continue
-                    if price[:2].isnumeric():
-                        if int(price[:2]) > self.price:
+                    if price[:-2].isnumeric():
+                        if int(price[:-2]) > self.price:
                             if DEBUG:
                                 print('***DEBUG*** Offer is too expensive at {} '
                                       '(Max price is {})'.format(price, self.price))
@@ -178,6 +201,7 @@ class EbayScraper(object):
                     item_details['ort'] = ort
                     item_details['price'] = price
                     item_details['time'] = time
+                    item_details['id'] = item_id
                     self.content.append(item_details)
         bar.finish()
         return True
@@ -193,8 +217,15 @@ class EbayScraper(object):
         while True:
             print("Searching for new offers on page %u..." % (i + 1))
             data = self.get_page_content(i)
+            if not data:  # If there is no page i then get_page_content will return ""
+                break
             if not self.extract_page_content(data):
                 break
             i += 1
+
+        if self.content:
+            self.viewed_offers[self.get_job_hash()] = self.content[0]['id']
+            with open(self.path, "w", encoding='utf8') as file:
+                json.dump(self.viewed_offers, file)
 
         return self.content
