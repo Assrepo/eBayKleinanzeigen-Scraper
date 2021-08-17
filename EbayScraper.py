@@ -185,8 +185,12 @@ class EbayScraper(object):
                             if DEBUG:
                                 print('***DEBUG*** Price is VB ~ Offer will be skipped')
                             continue
-                    if price[:-2].isnumeric():
-                        if int(price[:-2]) > self.price:
+                    if " VB" in price:
+                        number = price[:-5]
+                    else:
+                        number = price[:-2]
+                    if number.isnumeric():
+                        if int(number) > self.price:
                             if DEBUG:
                                 print('***DEBUG*** Offer is too expensive at {} '
                                       '(Max price is {})'.format(price, self.price))
